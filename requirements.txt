@@ -1,5 +1,6 @@
 streamlit
-flask
 pandas
 numpy
 openpyxl
+matplotlib
+playwright
