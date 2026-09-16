@@ -3,8 +3,17 @@ import pandas as pd
 import numpy as np
 import time
 import re
+import os
+import subprocess
 from playwright.sync_api import sync_playwright
 import matplotlib.pyplot as plt
+
+# --- PLAYWRIGHT OTOMATİK KURULUM KONTROLÜ (Render için) ---
+try:
+    subprocess.run(["python", "-m", "playwright", "install", "chromium"], capture_output=True)
+except Exception:
+    pass
+# -----------------------------------------------------------
 
 # Sayfa Yapılandırması (Geniş Ekran)
 st.set_page_config(page_title="Kapsamlı Oran Analiz Merkezi", page_icon="⚽", layout="wide")
@@ -165,7 +174,6 @@ if st.sidebar.button("Oddsportal Maçlarını Çek"):
                 st.sidebar.success(f"{len(match_data)} aktif maç bulundu!")
                 secilen_mac_metni = st.sidebar.selectbox("Maç Seçin", [m['fullText'][:80] for m in match_data])
                 
-                # Eşleşen tam metni bul ve oranları çek
                 secilen_full = next(m['fullText'] for m in match_data if m['fullText'][:80] == secilen_mac_metni)
                 odds = [float(o.replace(',', '.')) for o in re.findall(r"\b\d{1,3}[,\.]\d{1,2}\b", secilen_full)]
                 
@@ -268,7 +276,6 @@ if analiz_tetiklendi:
     ms0_yuzde = (ms0_sayi / toplam_mac) * 100
     ms2_yuzde = (ms2_sayi / toplam_mac) * 100
 
-    # Arayüz Yerleşimi (İki Kolon: Sol Rapor/Tablo, Sağ Grafik)
     col1, col2 = st.columns([1.3, 0.7])
 
     with col1:
@@ -284,7 +291,6 @@ if analiz_tetiklendi:
             
         st.info(f"**{baslik}** | Toplam Eşleşen Maç: **{toplam_mac}** | Tolerans: **{tolerans_adim:.2f}**")
         
-        # Metrik Kutuları
         m_col1, m_col2, m_col3 = st.columns(3)
         m_col1.metric("MS1 (Ev Sahibi)", f"%{ms1_yuzde:.1f}", f"{ms1_sayi} Adet")
         m_col2.metric("MS0 (Beraberlik)", f"%{ms0_yuzde:.1f}", f"{ms0_sayi} Adet")
