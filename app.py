@@ -90,10 +90,11 @@ def takim_listesi_getir(lig):
     elif lig == "Bundesliga": return BUNDESLIGA_TAKIMLARI
     return [""]
 
-# Session State başlatma (Canlı maçtan gelen oranları tutmak için)
+# Session State Değişkenleri
 if 'm1_val' not in st.session_state: st.session_state['m1_val'] = ""
 if 'm0_val' not in st.session_state: st.session_state['m0_val'] = ""
 if 'm2_val' not in st.session_state: st.session_state['m2_val'] = ""
+if 'bulunan_maclar_cache' not in st.session_state: st.session_state['bulunan_maclar_cache'] = []
 
 # ----------------- ANA BAŞLIK -----------------
 st.title("⚽ Kapsamlı Oran Analiz Merkezi")
@@ -170,22 +171,24 @@ if st.sidebar.button("Oddsportal Maçlarını Çek"):
                 """)
                 browser.close()
             
-            if match_data:
-                st.sidebar.success(f"{len(match_data)} aktif maç bulundu!")
-                secilen_mac_metni = st.sidebar.selectbox("Maç Seçin", [m['fullText'][:80] for m in match_data])
-                
-                secilen_full = next(m['fullText'] for m in match_data if m['fullText'][:80] == secilen_mac_metni)
-                odds = [float(o.replace(',', '.')) for o in re.findall(r"\b\d{1,3}[,\.]\d{1,2}\b", secilen_full)]
-                
-                if len(odds) >= 3:
-                    st.session_state['m1_val'] = str(odds[0])
-                    st.session_state['m0_val'] = str(odds[1])
-                    st.session_state['m2_val'] = str(odds[2])
-                    st.rerun()
-            else:
-                st.sidebar.warning("Bu ligde aktif maç bulunamadı.")
+            st.session_state['bulunan_maclar_cache'] = match_data
         except Exception as e:
             st.sidebar.error(f"Hata oluştu: {e}")
+
+# Eğer cache'de maç varsa her zaman arayüzde göster
+if st.session_state['bulunan_maclar_cache']:
+    st.sidebar.success(f"{len(st.session_state['bulunan_maclar_cache'])} aktif maç listeleniyor!")
+    secilen_mac_metni = st.sidebar.selectbox("Maç Seçin", [m['fullText'][:80] for m in st.session_state['bulunan_maclar_cache']])
+    
+    if st.sidebar.button("Seçilen Maçın Oranlarını Aktar"):
+        secilen_full = next(m['fullText'] for m in st.session_state['bulunan_maclar_cache'] if m['fullText'][:80] == secilen_mac_metni)
+        odds = [float(o.replace(',', '.')) for o in re.findall(r"\b\d{1,3}[,\.]\d{1,2}\b", secilen_full)]
+        
+        if len(odds) >= 3:
+            st.session_state['m1_val'] = str(odds[0])
+            st.session_state['m0_val'] = str(odds[1])
+            st.session_state['m2_val'] = str(odds[2])
+            st.rerun()
 
 # ----------------- ANALİZ MOTORU VE GÖRSELLEŞTİRME -----------------
 if analiz_tetiklendi:
